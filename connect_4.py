@@ -198,12 +198,13 @@ def negamax(player, board, alpha, beta, max_step, step, max_play, moves_from_beg
     
     return alpha
 
-def minmax(player, board, alpha, beta, max_step, step, max_play, column_order):
+def minmax(player, board, alpha, beta, max_step, step, max_play, column_order, position:list=None):
     # TREE POST-ORDER TRAVERSAL
     # player_maxer = 1
     # player_minimer = -1
-
+    global moves_cache
     global infinity
+
     # Game concluded before arriving to the max depth
     eval = there_is_a_winner(board)
     if eval != False: 
@@ -211,59 +212,72 @@ def minmax(player, board, alpha, beta, max_step, step, max_play, column_order):
 
     # Exit condition
     if step == max_step:
-        return my_eval_board(board)
+        return eval_board(board, player)
 
-    if step == 0: games = dict() 
+    if step == 0: games = dict()
 
     if player == 1:
-        max_res = -infinity
-
-        # 7 possible plays per node
         for c in range(max_play):
             i = column_order[c]
+                
             if is_playable(board, i, player):
-                play(board, i, player)
-                res = minmax(-player, board, alpha, beta, max_step, step+1, max_play, column_order)
-                if step == 0:
-                    games[res] = i
                 
-                max_res = max(max_res, res)
+                position.append(i)
 
-                take_back(board, i)
+                if not position and str(position) in moves_cache:
+                    res = moves_cache[str(position)]
+                else:
+                    play(board, i, player)
+                    res = minmax(-player, board, alpha, beta, max_step, step+1, max_play, column_order, position)
+                    take_back(board, i)
                 
+                if step == 0: games[res] = i
+                position.pop()
+
                 alpha = max(alpha, res)
                 if beta <= alpha:
                     break
 
+        moves_cache[str(position)] = alpha
+
         if step == 0:
-            play(board, games[max_res], player)
-            return (max_res, games[max_res])
+            if is_playable(board, i, player):
+                play(board, games[alpha], player)
+                position.append(i)
+                return (alpha, games[alpha])
         else:
-            return max_res
+            return alpha
     
     else:
-        min_res = infinity
         for c in range(max_play):
             i = column_order[c]
             if is_playable(board, i, player):
-                play(board, i, player)
-                res = minmax(-player, board, alpha, beta, max_step, step+1, max_play, column_order)
-                if step == 0:
-                    games[res] = i
                 
-                min_res = min(min_res, res)
+                position.append(i)
 
-                take_back(board, i)
+                if not position and str(position) in moves_cache:
+                    res = moves_cache[str(position)]
+                else:
+                    play(board, i, player)
+                    res = minmax(-player, board, alpha, beta, max_step, step+1, max_play, column_order, position)
+                    take_back(board, i)
+                
+                if step == 0: games[res] = i
+                position.pop()
 
                 beta = min(beta, res)
                 if beta <= alpha:
                     break
-        
+
+        moves_cache[str(position)] = beta
+
         if step == 0:
-            play(board, games[min_res], player)
-            return (min_res, games[min_res])
+            if is_playable(board, i, player):
+                play(board, games[beta], player)
+                position.append(i)
+                return (beta, games[beta])
         else:
-            return min_res
+            return beta
 
 
 
@@ -272,14 +286,14 @@ from time import time
 
 # MATCH SETTINGS
 seed(time())
-computer_moves_ahead = 8 # Depth
+computer_moves_ahead = 4 # Depth
 board = np.zeros((NUM_COLUMNS, COLUMN_HEIGHT), dtype=np.byte)
 turn_counter = 0
 eval = False
 chosen_col = -1
 column_order = list()
 position_key = list()
-player = -1#randint(-1, 1)
+player = randint(-1, 1)
 
 for i in range(NUM_COLUMNS):
     column_order.append(NUM_COLUMNS//2 + (1 - 2 * (i%2)) * (i+1)//2)
@@ -308,8 +322,8 @@ while not eval:
 
     else:
         print("COMPUTER")
-        #evaluation, games = negamax(player, board, -1, 1, computer_moves_ahead, 0, NUM_COLUMNS, turn_counter, column_order, position_key)
-        evaluation, games = minmax(player, board, -infinity, infinity, computer_moves_ahead, 0, NUM_COLUMNS, column_order)
+        #evaluation, games = negamax(player, board, -1, 1, 10, 0, NUM_COLUMNS, turn_counter, column_order, position_key)
+        evaluation, games = minmax(player, board, -infinity, infinity, 2, 0, NUM_COLUMNS, column_order, position_key)
         print(f"Evaluation of the plays: {evaluation} points\nNext move: Column {games+1}")
 
     eval = there_is_a_winner(board)
