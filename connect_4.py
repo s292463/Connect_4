@@ -272,20 +272,21 @@ from time import time
 
 # MATCH SETTINGS
 seed(time())
-computer_moves_ahead = 10 # Depth
+computer_moves_ahead = 8 # Depth
 board = np.zeros((NUM_COLUMNS, COLUMN_HEIGHT), dtype=np.byte)
 turn_counter = 0
 eval = False
 chosen_col = -1
 column_order = list()
 position_key = list()
+player = -1#randint(-1, 1)
 
 for i in range(NUM_COLUMNS):
     column_order.append(NUM_COLUMNS//2 + (1 - 2 * (i%2)) * (i+1)//2)
 
 print("\nConnect 4 game:\tCOMPUTER VS HUMAN")
 print("\t\t\tFIGHT")
-player = -1#randint(-1, 1)
+
 print("Human player start") if player is 1 else print("Computer start")
 
 while not eval:
@@ -294,21 +295,21 @@ while not eval:
     show(board)
 
     if player==1:
+        print("HUMAN")
         while chosen_col < 0 or chosen_col > NUM_COLUMNS-1:
-            print("HUMAN")
             print("Chose a column between 1 and 7:")
             chosen_col = int(input()) - 1
             if is_playable(board, chosen_col, player):
                 play(board, chosen_col, player)
                 position_key.append(chosen_col)
             else:
-                print("This column is already full")
+                print("This column is already full\nReinsert a column")
                 chosen_col = -1
 
     else:
         print("COMPUTER")
-        evaluation, games = negamax(player, board, -1, 1, computer_moves_ahead, 0, NUM_COLUMNS, turn_counter, column_order, position_key)
-        # evaluation, games = minmax(player, board, -infinity, infinity, computer_moves_ahead, 0, NUM_COLUMNS, column_order)
+        #evaluation, games = negamax(player, board, -1, 1, computer_moves_ahead, 0, NUM_COLUMNS, turn_counter, column_order, position_key)
+        evaluation, games = minmax(player, board, -infinity, infinity, computer_moves_ahead, 0, NUM_COLUMNS, column_order)
         print(f"Evaluation of the plays: {evaluation} points\nNext move: Column {games+1}")
 
     eval = there_is_a_winner(board)
